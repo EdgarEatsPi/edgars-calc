@@ -19,8 +19,13 @@ typedef struct c_list {
   void* val;
   struct c_list *next;
 } c_list;
+
 c_list* listInit(void* val) {
   c_list *new = (c_list*) malloc(sizeof(c_list));
+  if (!new) {
+    fprintf(stderr, "allocation failed!");
+    exit(EXIT_FAILURE);
+  }
   new->val = val;
   new->next = NULL;
   return new;
@@ -42,8 +47,7 @@ int stackIsEmpty(c_stack *stack) {
 
 int stackSize(c_stack *stack) {
   int i = 0;
-  c_list *cur = stack->head;
-  for (cur; cur; cur = cur->next) {
+  for (c_list *cur = stack->head; cur; cur = cur->next) {
     i++;
   }
   return i;
@@ -51,10 +55,6 @@ int stackSize(c_stack *stack) {
 
 void stackPush(c_stack *stack, void* val) {
   c_list *new = listInit(val);
-  if (!new) {
-    printf("Overflow!\n");
-    return;
-  }
 
   new->next = stack->head;
   stack->head = new;
@@ -62,7 +62,7 @@ void stackPush(c_stack *stack, void* val) {
 
 void stackPop(c_stack *stack) {
   if (stackIsEmpty(stack)) {
-    printf("Underflow!\n");
+    fprintf(stderr, "Underflow!\n");
     return;
   }
 
@@ -108,7 +108,7 @@ void enqueue(c_queue *queue, void *val) {
 
 void deque(c_queue *queue) {
   if (queueIsEmpty(queue)) {
-    printf("Queue Underflow\n");
+    fprintf(stderr, "Queue Underflow\n");
     return;
   }
 
@@ -189,20 +189,23 @@ c_queue* tokenize(char* expr) {
     }
     if ('0' <= *c && *c <= '9') {
       token->type = NUMBER;
-        token->value = 0;
-        while ('0' <= *c && *c <= '9') {
-          token->value = token->value*10 + (*c - '0');
-          c++;
-        }
-        enqueue(tokens, token);
-        continue;
+      token->value = 0;
+      while ('0' <= *c && *c <= '9') {
+        token->value = token->value*10 + (*c - '0');
+        c++;
       }
-      if (isOperator(*c)) {
-        token->type = OPERATOR;
-        token->operator = *c;
-        enqueue(tokens, token);
-      }
+      enqueue(tokens, token);
+      continue;
+    }
+    if (isOperator(*c)) {
+      token->type = OPERATOR;
+      token->operator = *c;
+      enqueue(tokens, token);
       c++;
+      continue;
+    }
+    fprintf(stderr, "Invalid input: %c\n", *c);
+    exit(EXIT_FAILURE);
   }
 
   return tokens;
@@ -267,7 +270,8 @@ double calc(char* expr) {
   }
 
   if (stackIsEmpty(res)) {
-    perror("Did not evaluate correctly.\n");
+    fprintf(stderr, "Did not evaluate correctly.\n");
+    exit(EXIT_FAILURE);
   }
 
   double result = ((Token*)stackPeek(res))->value;
